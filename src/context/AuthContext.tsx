@@ -21,23 +21,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Dynamic import avoids SSR initialization issues with missing env vars
-    import('@/lib/supabase/client').then(({ createClient }) => {
-      const supabase = createClient()
-      setLoading(true)
+    let unsubscribe: (() => void) | undefined
 
-      supabase.auth.getUser().then(({ data }) => {
-        setUser(data.user)
-        setLoading(false)
+    import('@/lib/supabase/client')
+      .then(({ createClient }) => {
+        const supabase = createClient()
+        setLoading(true)
+
+        supabase.auth
+          .getUser()
+          .then(({ data }) => {
+            setUser(data.user)
+          })
+          .catch(() => {})
+          .finally(() => setLoading(false))
+
+        const {
+          data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, session) => {
+          setUser(session?.user ?? null)
+        })
+
+        unsubscribe = () => subscription.unsubscribe()
       })
+      .catch(() => setLoading(false))
 
-      const {
-        data: { subscription },
-      } = supabase.auth.onAuthStateChange((_event, session) => {
-        setUser(session?.user ?? null)
-      })
-
-      return () => subscription.unsubscribe()
-    })
+    return () => unsubscribe?.()
   }, [])
 
   return <AuthContext.Provider value={{ user, loading }}>{children}</AuthContext.Provider>
