@@ -33,7 +33,7 @@ export async function getProducts(filters?: ProductFilters): Promise<Product[]> 
 
   const { data, error } = await query
 
-  if (error) throw error
+  if (error) return []
   return (data as unknown as Product[]) ?? []
 }
 

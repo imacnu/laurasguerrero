@@ -41,9 +41,9 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
   }
 
   const [products, categories, collections] = await Promise.all([
-    getProducts(filters),
-    getCategories(),
-    getCollections(),
+    getProducts(filters).catch(() => [] as Awaited<ReturnType<typeof getProducts>>),
+    getCategories().catch(() => [] as Awaited<ReturnType<typeof getCategories>>),
+    getCollections().catch(() => [] as Awaited<ReturnType<typeof getCollections>>),
   ])
 
   return (

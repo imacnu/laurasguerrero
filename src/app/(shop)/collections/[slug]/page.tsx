@@ -21,7 +21,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: CollectionPageProps): Promise<Metadata> {
   const { slug } = await params
-  const collections = await getCollections()
+  const collections = await getCollections().catch(() => [])
   const col = collections.find((c) => c.slug === slug)
   if (!col) return {}
   return { title: col.name, description: col.description ?? `Colección ${col.name}` }
@@ -29,12 +29,12 @@ export async function generateMetadata({ params }: CollectionPageProps): Promise
 
 export default async function CollectionPage({ params }: CollectionPageProps) {
   const { slug } = await params
-  const collections = await getCollections()
+  const collections = await getCollections().catch(() => [])
   const collection = collections.find((c) => c.slug === slug)
 
   if (!collection) notFound()
 
-  const products = await getProducts({ collection: slug })
+  const products = await getProducts({ collection: slug }).catch(() => [])
 
   return (
     <>
