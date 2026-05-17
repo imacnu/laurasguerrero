@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { formatPrice } from '@/lib/utils'
-import Button from '@/components/ui/Button'
+import DeleteProductButton from '@/components/admin/DeleteProductButton'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -32,7 +32,7 @@ export default async function AdminProductsPage() {
         <table className="w-full text-sm">
           <thead className="bg-cream-dark">
             <tr>
-              {['Nombre', 'Precio', 'Stock', 'Acciones'].map((h) => (
+              {['Nombre', 'Precio', 'Stock', 'Acciones', ''].map((h) => (
                 <th
                   key={h}
                   className="px-4 py-3 text-left text-xs tracking-widest uppercase text-charcoal/50"
@@ -57,6 +57,9 @@ export default async function AdminProductsPage() {
                   >
                     Editar
                   </Link>
+                </td>
+                <td className="px-4 py-3">
+                  <DeleteProductButton id={p.id} name={p.name} />
                 </td>
               </tr>
             ))}

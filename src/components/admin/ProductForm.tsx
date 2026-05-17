@@ -1,6 +1,6 @@
 'use client'
 
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
@@ -9,6 +9,7 @@ import { productSchema, type ProductInput } from '@/lib/validations/product'
 import { slugify } from '@/lib/utils'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
+import ImageUploader from './ImageUploader'
 import type { Product, Category, Collection } from '@/types/product'
 
 interface ProductFormProps {
@@ -27,6 +28,7 @@ export default function ProductForm({ product, categories, collections }: Produc
     handleSubmit,
     setValue,
     watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<ProductInput>({
     resolver: zodResolver(productSchema),
@@ -58,6 +60,7 @@ export default function ProductForm({ product, categories, collections }: Produc
   })
 
   const name = watch('name')
+  const slug = watch('slug')
 
   function autoSlug() {
     if (!isEdit && name) {
@@ -67,11 +70,7 @@ export default function ProductForm({ product, categories, collections }: Produc
 
   async function onSubmit(data: ProductInput) {
     if (isEdit) {
-      const { error } = await supabase
-        .from('products')
-        .update(data)
-        .eq('id', product!.id)
-
+      const { error } = await supabase.from('products').update(data).eq('id', product!.id)
       if (error) { toast.error('Error al actualizar'); return }
       toast.success('Producto actualizado')
     } else {
@@ -79,13 +78,12 @@ export default function ProductForm({ product, categories, collections }: Produc
       if (error) { toast.error('Error al crear el producto'); return }
       toast.success('Producto creado')
     }
-
     router.push('/admin/products')
     router.refresh()
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 max-w-2xl">
       <Input
         {...register('name')}
         id="name"
@@ -96,7 +94,7 @@ export default function ProductForm({ product, categories, collections }: Produc
       <Input
         {...register('slug')}
         id="slug"
-        label="Slug"
+        label="Slug (URL)"
         error={errors.slug?.message}
       />
       <div className="flex flex-col gap-1.5">
@@ -110,58 +108,79 @@ export default function ProductForm({ product, categories, collections }: Produc
           className="w-full border border-charcoal/20 bg-transparent px-4 py-3 text-sm focus:border-charcoal focus:outline-none resize-none"
         />
       </div>
-      <Input
-        {...register('price', { valueAsNumber: true })}
-        id="price"
-        type="number"
-        step="0.01"
-        label="Precio (€)"
-        error={errors.price?.message}
-      />
-      <Input
-        {...register('stock', { valueAsNumber: true })}
-        id="stock"
-        type="number"
-        label="Stock"
-        error={errors.stock?.message}
-      />
+      <div className="grid grid-cols-2 gap-4">
+        <Input
+          {...register('price', { valueAsNumber: true })}
+          id="price"
+          type="number"
+          step="0.01"
+          label="Precio (€)"
+          error={errors.price?.message}
+        />
+        <Input
+          {...register('stock', { valueAsNumber: true })}
+          id="stock"
+          type="number"
+          label="Stock"
+          error={errors.stock?.message}
+        />
+      </div>
       <Input
         {...register('material')}
         id="material"
         label="Material"
       />
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs tracking-widest uppercase text-charcoal/70">Categoría</label>
-        <select
-          {...register('category_id')}
-          className="border border-charcoal/20 bg-transparent px-4 py-3 text-sm focus:outline-none focus:border-charcoal"
-        >
-          <option value="">Sin categoría</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs tracking-widest uppercase text-charcoal/70">Categoría</label>
+          <select
+            {...register('category_id')}
+            className="border border-charcoal/20 bg-transparent px-4 py-3 text-sm focus:outline-none focus:border-charcoal"
+          >
+            <option value="">Sin categoría</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs tracking-widest uppercase text-charcoal/70">Colección</label>
+          <select
+            {...register('collection_id')}
+            className="border border-charcoal/20 bg-transparent px-4 py-3 text-sm focus:outline-none focus:border-charcoal"
+          >
+            <option value="">Sin colección</option>
+            {collections.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </div>
       </div>
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs tracking-widest uppercase text-charcoal/70">Colección</label>
-        <select
-          {...register('collection_id')}
-          className="border border-charcoal/20 bg-transparent px-4 py-3 text-sm focus:outline-none focus:border-charcoal"
-        >
-          <option value="">Sin colección</option>
-          {collections.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
-      </div>
+
+      {/* Images */}
+      <Controller
+        control={control}
+        name="images"
+        render={({ field }) => (
+          <ImageUploader
+            images={field.value ?? []}
+            onChange={field.onChange}
+            productSlug={slug || 'nuevo-producto'}
+          />
+        )}
+      />
+
       <label className="flex items-center gap-3 cursor-pointer">
         <input {...register('featured')} type="checkbox" className="h-4 w-4" />
-        <span className="text-sm">Destacado</span>
+        <span className="text-sm">Destacado en portada</span>
       </label>
 
       <div className="flex gap-3 pt-2">
         <Button type="submit" loading={isSubmitting}>
           {isEdit ? 'Guardar cambios' : 'Crear producto'}
+        </Button>
+        <Button type="button" variant="outline" onClick={() => router.push('/admin/products')}>
+          Cancelar
         </Button>
       </div>
     </form>

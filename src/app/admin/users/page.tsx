@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 
@@ -21,7 +22,7 @@ export default async function AdminUsersPage() {
         <table className="w-full text-sm">
           <thead className="bg-cream-dark">
             <tr>
-              {['Nombre', 'Email', 'Registro'].map((h) => (
+              {['Nombre', 'Email', 'Registro', ''].map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs tracking-widest uppercase text-charcoal/50">
                   {h}
                 </th>
@@ -35,6 +36,14 @@ export default async function AdminUsersPage() {
                 <td className="px-4 py-3 text-charcoal/70">{p.email}</td>
                 <td className="px-4 py-3 text-charcoal/50 text-xs">
                   {new Date(p.created_at).toLocaleDateString('es-ES')}
+                </td>
+                <td className="px-4 py-3">
+                  <Link
+                    href={`/admin/users/${p.id}`}
+                    className="text-xs tracking-widest uppercase underline underline-offset-4"
+                  >
+                    Editar
+                  </Link>
                 </td>
               </tr>
             ))}
